@@ -8,7 +8,7 @@ Requirements (used as test IDs in tests/test_abs.py):
   REQ-ABS-05  ABS is inactive below 5 km/h vehicle speed.
 """
 
-SLIP_THRESHOLD = 0.20  # REQ-ABS-04
+SLIP_THRESHOLD = 0.30  # REQ-ABS-04
 MIN_ACTIVE_SPEED_KMH = 5.0  # REQ-ABS-05
 
 
