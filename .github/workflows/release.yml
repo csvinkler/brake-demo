@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"] # git tag v1.0.0 && git push origin v1.0.0
+  workflow_dispatch: # or from the browser: Actions > Release > Run workflow
+    inputs:
+      version:
+        description: "Version to release, e.g. v1.0.0"
+        required: true
+
+permissions:
+  contents: write # needed to create the release and the tag
+
+env:
+  TAG: ${{ inputs.version || github.ref_name }}
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml # no release without green tests
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Check that the tag matches the version in the code
+        run: |
+          CODE_VERSION=$(python -c "import sys; sys.path.insert(0, 'src'); import brake_demo; print(brake_demo.__version__)")
+          echo "tag: $TAG, code: v$CODE_VERSION"
+          if [ "$TAG" != "v$CODE_VERSION" ]; then
+            echo "::error::Tag $TAG does not match __version__ $CODE_VERSION in src/brake_demo/__init__.py"
+            exit 1
+          fi
+
+      - name: Build wheel and source package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Smoke test the built package
+        run: |
+          pip install dist/*.whl
+          brake-demo 100 50
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "brake-demo $TAG" --generate-notes
