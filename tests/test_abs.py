@@ -57,3 +57,8 @@ def test_cli_prints_decision(capsys):
 def test_cli_without_arguments_shows_usage(capsys):
     assert main([]) == 2
     assert "usage" in capsys.readouterr().out
+
+
+# REQ-ABS-05, boundary value: ABS becomes active at exactly 5 km/h
+def test_req_abs_05_active_from_5_kmh():
+    assert abs_command(5, 0) == "RELEASE"
